@@ -25,7 +25,7 @@ void update(int *s, double h) {
 }
 
 int main(int argc, char *argv[]) {
-  unsigned nsweep;
+  int nsweep;
   double h;
 
   printf("Program generates a thermal ensemble for states with one spin.\n\n");
@@ -44,25 +44,25 @@ int main(int argc, char *argv[]) {
     printf("Enter value of magnetic field parameter h=H/(k_bT):\n");
     scanf("%lf", &h);
   }
-
+  
   // our initial state (arbitrary value, could be -1 as well)
   int spin = 1;
 
   // Metropolis update loop
-  unsigned nplus=0;
-  unsigned nminus=0;
-  for(unsigned n=0; n<nsweep; n++) {
+  int nplus=0;
+  int nminus=0;
+  for(int n=0; n<nsweep; n++) {
     update(&spin,h);           // try a Metropolis update
     if (spin == 1) nplus++;                        
     if (spin == -1) nminus++;
   }
 
-  printf("Calculations\n");
-  printf("P(+ state) = %12.10lf\n", (double)nplus/(nplus+nminus));
-  printf("P(- state) = %12.10lf\n", (double)nminus/(nplus+nminus));
+  printf("Calculations %d %d\n",nplus,nminus);
+  printf("P(+ state) = %13.10lf\n", (double)nplus/(nplus+nminus) );
+  printf("P(- state) = %13.10lf\n", (double)nminus/(nplus+nminus) );
 
   // Write <magnetization> 
-  printf("<sigma> = %12.10lf\n", (double)(nplus-nminus)/(nplus+nminus));
+  printf("<sigma> = %13.10lf\n", (double)(nplus-nminus)/(nplus+nminus) );
   
   /* Write theoretical prediction for comparison  */
   printf("\nTheory prediction: sigma = tanh(h) = %12.10lf\n", tanh(h));   

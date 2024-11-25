@@ -49,8 +49,8 @@ void sweep(int *s1, int *s2, double beta, double h) {
 
 
 
-int main() {
-   unsigned nsweep;
+int main(int argc, char *argv[]) {
+   int nsweep;
    int spin1, spin2;
    double beta, h;
    int nupup=0, nupdown=0, ndownup=0, ndowndown=0;
@@ -60,21 +60,28 @@ int main() {
 
    srand48((long)time(0));               // seed the number generator
 
-   printf("Enter total number of spin configurations (sweeps) generated:\n");
-   scanf("%d", &nsweep); 
+   if (argc==4){
+    nsweep=atoi(argv[1]);
+    h=atof(argv[2]);
+    beta=atof(argv[3]);
+   }
+   else{
+     printf("Enter total number of spin configurations (sweeps) generated:\n");
+     scanf("%d", &nsweep); 
 
-   printf("Enter value of magnetic field parameter h=H/(k_bT):\n");
-   scanf("%lf", &h);
+     printf("Enter value of magnetic field parameter h=H/(k_bT):\n");
+     scanf("%lf", &h);
 
-   printf("Enter temperature parameter beta (= 1/kT):\n");
-   scanf("%lf", &beta);
-
+     printf("Enter temperature parameter beta (= 1/kT):\n");
+     scanf("%lf", &beta);
+   }
+   
    //  Initialize spins with a "hot" start
    spin1 = spin2 = -1;
    if(drand48()<0.5) spin1 = 1; 
    if(drand48()<0.5) spin2 = 1;
 
-   for(unsigned n=0; n<nsweep; n++) {
+   for(int n=0; n<nsweep; n++) {
      sweep(&spin1, &spin2, beta, h);
  
      // accumulate magnetization 
