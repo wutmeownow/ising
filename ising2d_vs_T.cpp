@@ -158,7 +158,7 @@ void DisplayLattice(double T) {
 
 int main() {
   int n, nsweep, nx, ny, itemp, ntemp;
-  long ntotal, nmag, nenergy;
+  long ntotal, nmag, nenergy, energysqr;
   double beta, h, Tmax, T;
   FILE *output;
   const char *OutputFileName = "ising2d_vs_T.dat";
@@ -187,7 +187,7 @@ int main() {
   InitializeHot();
 
   // canvas for graph
-  TCanvas *c2 = new TCanvas("c2","ising 2d",600,600);
+  TCanvas *c2 = new TCanvas("c2","ising 2d",700,600);
   TGraph *magT = new TGraph();
   magT->SetTitle(";T;magnetization");
   magT->SetName("g1");
@@ -202,14 +202,15 @@ int main() {
     /* sweep ntherm times to thermalize system at new temperature */
     for(n=0; n<ntherm; n++) sweep(beta,h);
     /* then sweep through lattice nsweep times for that temperature */
-    nmag=ntotal=nenergy=0;
+    nmag=ntotal=nenergy=energysqr=0;
     for(n=0; n<nsweep; n++) {
       sweep(beta,h);
       for(nx=1; nx<=NX; nx++) for(ny=1; ny<=NY; ny++) {
         nmag += spin[nx][ny];
         double environment = 
-          beta*(spin[nx][ny-1] + spin[nx][ny+1] + spin[nx-1][ny] + spin[nx+1][ny]) + h;
+          (spin[nx][ny-1] + spin[nx][ny+1] + spin[nx-1][ny] + spin[nx+1][ny]) + h/beta;
         nenergy += -spin[nx][ny]*environment;
+        energysqr += std::pow(spin[nx][ny]*environment,2);
         ntotal++;
       }
     }
@@ -220,9 +221,11 @@ int main() {
   }
 
   printf("Output file is %s\n",OutputFileName);
+  magT->GetXaxis()->SetLimits(0,Tmax);
   magT->Draw("AC");
   c2->Print("ising.pdf(");
   c2->Clear();
+  enerT->GetXaxis()->SetLimits(0,Tmax);
   enerT->Draw("AC");
   c2->Print("ising.pdf)");
   return(0);
