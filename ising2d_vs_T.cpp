@@ -20,6 +20,16 @@
 #include <math.h>
 #include <unistd.h>    /* for sleep system call */
 #include <time.h>
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TLegend.h"
+#include "TFile.h"
+#include "TAxis.h"
+#include "TStyle.h"
+#include "TGClient.h"
+#include "TF1.h"
+#include "TCanvas.h"
+#include "TGraph.h"
 
 
 /* if you don't have drand48 uncomment the following two lines */
@@ -148,7 +158,7 @@ void DisplayLattice(double T) {
 
 int main() {
   int n, nsweep, nx, ny, itemp, ntemp;
-  long ntotal, nmag;
+  long ntotal, nmag, nenergy;
   double beta, h, Tmax, T;
   FILE *output;
   const char *OutputFileName = "ising2d_vs_T.dat";
@@ -176,6 +186,15 @@ int main() {
 
   InitializeHot();
 
+  // canvas for graph
+  TCanvas *c2 = new TCanvas("c2","ising 2d",600,600);
+  TGraph *magT = new TGraph();
+  magT->SetTitle(";T;magnetization");
+  magT->SetName("g1");
+  TGraph *enerT = new TGraph();
+  enerT->SetTitle(";T;energy");
+  enerT->SetName("g2");
+
   /* now do ntemp temperatures between Tmax and 0 */
   for (itemp=ntemp; itemp>0; itemp--) {
     T = (Tmax*itemp)/ntemp;
@@ -183,19 +202,28 @@ int main() {
     /* sweep ntherm times to thermalize system at new temperature */
     for(n=0; n<ntherm; n++) sweep(beta,h);
     /* then sweep through lattice nsweep times for that temperature */
-    nmag=ntotal=0;
+    nmag=ntotal=nenergy=0;
     for(n=0; n<nsweep; n++) {
       sweep(beta,h);
       for(nx=1; nx<=NX; nx++) for(ny=1; ny<=NY; ny++) {
-	nmag += spin[nx][ny];
-	ntotal++;
+        nmag += spin[nx][ny];
+        double environment = 
+          beta*(spin[nx][ny-1] + spin[nx][ny+1] + spin[nx-1][ny] + spin[nx+1][ny]) + h;
+        nenergy += -spin[nx][ny]*environment;
+        ntotal++;
       }
     }
     fprintf(output, "%lf %lf\n", T, (double)nmag/ntotal);
+    magT->SetPoint(magT->GetN(),T,(double)nmag/ntotal); // add point to graph
+    enerT->SetPoint(enerT->GetN(),T,(double)nenergy/ntotal); // add point to graph
     if (VisualDisplay) DisplayLattice(T);
   }
 
   printf("Output file is %s\n",OutputFileName);
-
+  magT->Draw("AC");
+  c2->Print("ising.pdf(");
+  c2->Clear();
+  enerT->Draw("AC");
+  c2->Print("ising.pdf)");
   return(0);
 }

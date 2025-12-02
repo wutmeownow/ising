@@ -34,7 +34,7 @@
 #define NX 64
 #define NY 64
 
-int ntherm = 0;
+int ntherm = 200;
 const int VisualDisplay = 1;
 const int SleepTime = 100000;   // in microseconds
 
