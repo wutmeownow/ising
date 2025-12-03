@@ -158,7 +158,8 @@ void DisplayLattice(double T) {
 
 int main() {
   int n, nsweep, nx, ny, itemp, ntemp;
-  long ntotal, nmag, nenergy, energysqr;
+  long ntotal, nmag;
+  double nenergy, energysqr;
   double beta, h, Tmax, T;
   FILE *output;
   const char *OutputFileName = "ising2d_vs_T.dat";
@@ -194,6 +195,9 @@ int main() {
   TGraph *enerT = new TGraph();
   enerT->SetTitle(";T;energy");
   enerT->SetName("g2");
+  TGraph *specheat = new TGraph();
+  specheat->SetTitle(";T;C");
+  specheat->SetName("g3");
 
   /* now do ntemp temperatures between Tmax and 0 */
   for (itemp=ntemp; itemp>0; itemp--) {
@@ -202,21 +206,30 @@ int main() {
     /* sweep ntherm times to thermalize system at new temperature */
     for(n=0; n<ntherm; n++) sweep(beta,h);
     /* then sweep through lattice nsweep times for that temperature */
-    nmag=ntotal=nenergy=energysqr=0;
+    nmag=ntotal=nenergy=energysqr=0; // ntotal is # sweeps x # particles
     for(n=0; n<nsweep; n++) {
       sweep(beta,h);
+	  double configE=0;
       for(nx=1; nx<=NX; nx++) for(ny=1; ny<=NY; ny++) {
         nmag += spin[nx][ny];
+        // environment for energy calculation
         double environment = 
-          (spin[nx][ny-1] + spin[nx][ny+1] + spin[nx-1][ny] + spin[nx+1][ny]) + h/beta;
-        nenergy += -spin[nx][ny]*environment;
-        energysqr += std::pow(spin[nx][ny]*environment,2);
+          0.5*(spin[nx][ny-1] + spin[nx][ny+1] + spin[nx-1][ny] + spin[nx+1][ny]) + h/beta;
+        // total energy of the whole configuration
+		double energy = -spin[nx][ny]*environment;
+        configE += energy; // add to total energy for all sites for this sweep
         ntotal++;
       }
+	  nenergy += configE; // add total energy of this sweep
+	  energysqr += configE*configE; // add energy sqr of this sweep
     }
     fprintf(output, "%lf %lf\n", T, (double)nmag/ntotal);
     magT->SetPoint(magT->GetN(),T,(double)nmag/ntotal); // add point to graph
-    enerT->SetPoint(enerT->GetN(),T,(double)nenergy/ntotal); // add point to graph
+    enerT->SetPoint(enerT->GetN(),T,nenergy/ntotal); // add point to graph
+	double avgenergysqr = energysqr/nsweep;
+	double avgenergy	= nenergy/nsweep;
+	std::cout<<avgenergysqr<<"	"<<avgenergy<<std::endl;
+    specheat->SetPoint(specheat->GetN(),T,(avgenergysqr - avgenergy*avgenergy)/(NX*NX*NY*NY*T*T)); // add point to graph
     if (VisualDisplay) DisplayLattice(T);
   }
 
@@ -227,6 +240,10 @@ int main() {
   c2->Clear();
   enerT->GetXaxis()->SetLimits(0,Tmax);
   enerT->Draw("AC");
+  c2->Print("ising.pdf");
+  c2->Clear();
+  specheat->GetXaxis()->SetLimits(0,Tmax);
+  specheat->Draw("AC");
   c2->Print("ising.pdf)");
   return(0);
 }
